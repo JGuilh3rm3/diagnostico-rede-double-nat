@@ -1,4 +1,4 @@
-# 🔧 Diagnóstico de Rede - Double NAT
+# Diagnóstico de Rede - Double NAT
 
 ## Sobre este projeto
 
@@ -22,7 +22,7 @@ O objetivo foi restaurar a conectividade de um PC com falhas intermitentes de in
 
 ## Topologia da Rede
 
-```
+```bash
 Operadora (Claro) → Roteador do prédio (ZTE F6600P) → Cabo → TP-Link EC220-G5 → PC
 ```
 
@@ -48,11 +48,11 @@ ping 8.8.8.8 -t
 
 **Resultado:**
 
-```
+```bash
 Resposta de 8.8.8.8: Esgotado o tempo limite do pedido.
 ```
 
-**Conclusão:** ausência total de conectividade externa.
+**Conclusão:** ausência total de conectividade externa (100% de perda de pacotes).
 
 ---
 
@@ -84,9 +84,9 @@ ipconfig /all
 **Resultado:**
 
 * IP atribuído corretamente (192.168.0.100)
-* Campo de DNS vazio
+* Campo de DNS não preenchido corretamente
 
-**Conclusão:** falha de resolução de nomes.
+**Conclusão:** falha na distribuição de configuração de rede, afetando resolução de nomes.
 
 ---
 
@@ -102,7 +102,7 @@ ipconfig /renew
 
 **Resultado:** problema persistiu.
 
-**Conclusão:** falha não estava no cache ou DHCP.
+**Conclusão:** falha não estava relacionada a cache ou concessão DHCP.
 
 ---
 
@@ -163,33 +163,32 @@ netsh advfirewall set allprofiles state on
 
 ---
 
-## ⚙️ Alterações no Roteador
+## Alterações no Roteador
 
 | Configuração     | Antes              | Depois          |
 | ---------------- | ------------------ | --------------- |
 | Modo operacional | Roteador           | Ponto de Acesso |
-| Cabo do prédio   | WAN                | WAN             |
 | DNS              | Automático (vazio) | 192.168.0.1     |
 
 ---
 
 ## Causa Raiz
 
-**Double NAT**
+Double NAT
 
-Dois roteadores atuando como principal simultaneamente na mesma rede.
+Dois roteadores atuando como dispositivos de roteamento na mesma rede, introduzindo múltiplas camadas de NAT.
 
-O TP-Link operava em modo roteador, criando uma sub-rede e causando:
+Isso resultava em:
 
-* conflito de IP
-* falha de roteamento
-* instabilidade
+* mascaramento duplo de endereços IP
+* falhas no encaminhamento de pacotes
+* inconsistência na distribuição de configurações de rede (como DNS)
 
 ---
 
 ## Solução
 
-Alteração do TP-Link para **Modo Ponto de Acesso (Access Point)**, eliminando a segunda camada de NAT.
+Alteração do TP-Link para modo Ponto de Acesso (Access Point), eliminando a segunda camada de NAT e permitindo que apenas o roteador principal gerencie o roteamento da rede.
 
 ---
 
@@ -204,10 +203,10 @@ Este caso reforça a importância de mapear corretamente a topologia de rede ant
 * Diagnóstico de rede (TCP/IP)
 * Troubleshooting estruturado
 * Análise de conectividade (ping, tracert)
-* Identificação de falhas de DNS
-* Resolução de conflitos de NAT
-* Configuração de roteadores
-* Interpretação de falhas em ambiente real
+* Interpretação de falhas de DNS
+* Identificação e resolução de Double NAT
+* Configuração de dispositivos de rede
+* Análise de falhas em ambiente real
 
 ---
 
@@ -225,4 +224,5 @@ Este caso reforça a importância de mapear corretamente a topologia de rede ant
 
 ---
 
-*João Guilherme | ADS - UNIP São Paulo*
+João Guilherme | ADS - UNIP São Paulo
+
