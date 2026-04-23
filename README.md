@@ -1,6 +1,6 @@
 # 🔧 Diagnóstico de Rede - Double NAT
 
-## 👨‍💻 Sobre este projeto
+## Sobre este projeto
 
 Este projeto demonstra um processo completo de troubleshooting de rede em ambiente real, incluindo análise de conectividade, diagnóstico de falhas de DNS e identificação de problemas de Double NAT.
 
@@ -8,7 +8,7 @@ O objetivo foi restaurar a conectividade de um PC com falhas intermitentes de in
 
 ---
 
-## 📋 Contexto
+## Contexto
 
 **Problema:** perda intermitente de conectividade em ambiente doméstico com múltiplos roteadores.
 
@@ -20,7 +20,7 @@ O objetivo foi restaurar a conectividade de um PC com falhas intermitentes de in
 
 ---
 
-## 🌐 Topologia da Rede
+## Topologia da Rede
 
 ```
 Operadora (Claro) → Roteador do prédio (ZTE F6600P) → Cabo → TP-Link EC220-G5 → PC
@@ -28,7 +28,7 @@ Operadora (Claro) → Roteador do prédio (ZTE F6600P) → Cabo → TP-Link EC22
 
 ---
 
-## 🖥️ Hardware
+## Hardware
 
 * Placa-mãe: Biostar B450MH
 * Adaptador de rede: Realtek PCIe GbE Family Controller
@@ -36,7 +36,7 @@ Operadora (Claro) → Roteador do prédio (ZTE F6600P) → Cabo → TP-Link EC22
 
 ---
 
-## 🔍 Processo de Diagnóstico
+## Processo de Diagnóstico
 
 ### 1. Verificação de Conectividade
 
@@ -173,7 +173,7 @@ netsh advfirewall set allprofiles state on
 
 ---
 
-## 🎯 Causa Raiz
+## Causa Raiz
 
 **Double NAT**
 
@@ -187,19 +187,19 @@ O TP-Link operava em modo roteador, criando uma sub-rede e causando:
 
 ---
 
-## ✅ Solução
+## Solução
 
 Alteração do TP-Link para **Modo Ponto de Acesso (Access Point)**, eliminando a segunda camada de NAT.
 
 ---
 
-## 📌 Conclusão
+## Conclusão
 
 Este caso reforça a importância de mapear corretamente a topologia de rede antes de aplicar soluções isoladas, evitando diagnósticos incorretos e retrabalho.
 
 ---
 
-## 🧠 Habilidades Demonstradas
+## Habilidades Demonstradas
 
 * Diagnóstico de rede (TCP/IP)
 * Troubleshooting estruturado
@@ -211,14 +211,14 @@ Este caso reforça a importância de mapear corretamente a topologia de rede ant
 
 ---
 
-## 📁 Arquivos
+## Arquivos
 
 * README.md
 * diagnostico_rede.pdf
 
 ---
 
-## 🔗 Contato
+## Contato
 
 * GitHub: https://github.com/JGuilh3rm3
 * LinkedIn: https://www.linkedin.com/in/jo%C3%A3o-guilherme-andrade-227b14346/?skipRedirect=true
