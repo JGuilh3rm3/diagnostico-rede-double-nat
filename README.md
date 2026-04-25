@@ -1,228 +1,239 @@
-# Diagnóstico de Rede - Double NAT
+# Diagnóstico de Rede – Double NAT
 
-## Sobre este projeto
+## Visão Geral
 
-Este projeto demonstra um processo completo de troubleshooting de rede em ambiente real, incluindo análise de conectividade, diagnóstico de falhas de DNS e identificação de problemas de Double NAT.
+Este projeto documenta o processo de diagnóstico de um problema de rede envolvendo double NAT (Network Address Translation duplo), identificado em um ambiente doméstico com múltiplos dispositivos de rede.
 
-O objetivo foi restaurar a conectividade de um PC com falhas intermitentes de internet, utilizando abordagem estruturada e boas práticas de diagnóstico.
+O objetivo foi analisar a origem do problema, validar hipóteses técnicas e compreender os impactos dessa configuração no funcionamento da rede.
 
----
-
-## Contexto
-
-**Problema:** perda intermitente de conectividade em ambiente doméstico com múltiplos roteadores.
-
-**Cenário observado:**
-
-* PC ficava sem internet de forma aleatória
-* Roteador indicava funcionamento normal (LEDs verdes)
-* Outros usuários na mesma rede não apresentavam problemas
+Todos os dados sensíveis foram anonimizados para preservar a segurança do ambiente.
 
 ---
 
-## Topologia da Rede
+## Ambiente
+
+* Rede doméstica com múltiplos dispositivos de roteamento
+* Provedor de internet (<ISP_PROVIDER>)
+* Sistema operacional com ferramentas de diagnóstico de rede
+
+---
+
+## Problema Identificado
+
+Durante a análise da rede, foi observado comportamento inconsistente em aplicações que dependem de conectividade externa, como:
+
+* dificuldade na abertura de portas
+* falhas em conexões P2P
+* instabilidade em serviços que requerem acesso direto
+
+A investigação indicou a presença de double NAT, caracterizado pela existência de dois dispositivos realizando tradução de endereços na mesma rede.
+
+---
+
+## Metodologia
+
+O diagnóstico seguiu as seguintes etapas:
+
+1. Identificação do endereço IP local
+2. Verificação do gateway padrão
+3. Identificação do IP público
+4. Comparação entre os valores
+5. Análise da topologia da rede
+6. Validação da hipótese de CGNAT
+
+---
+
+## Coleta de Informações
+
+### Identificação de IP local e gateway
 
 ```bash
-Operadora (Claro) → Roteador do prédio (ZTE F6600P) → Cabo → TP-Link EC220-G5 → PC
+ip a
+ip route
 ```
 
----
+Esses comandos permitem identificar:
 
-## Hardware
-
-* Placa-mãe: Biostar B450MH
-* Adaptador de rede: Realtek PCIe GbE Family Controller
-* Roteador pessoal: TP-Link EC220-G5
+* endereço IP da máquina na rede local
+* gateway padrão da rede
 
 ---
 
-## Processo de Diagnóstico
-
-### 1. Verificação de Conectividade
+### Verificação do IP público
 
 ```bash
-ping 8.8.8.8 -t
+curl ifconfig.me
 ```
 
-**Objetivo:** validar acesso à internet via teste contínuo de pacotes.
+Objetivo:
 
-**Resultado:**
-
-```bash
-Resposta de 8.8.8.8: Esgotado o tempo limite do pedido.
-```
-
-**Conclusão:** ausência total de conectividade externa (100% de perda de pacotes).
+* identificar o IP público visível externamente
+* comparar com o IP configurado no roteador
 
 ---
 
-### 2. Rastreamento de Rota
+## Evidências
 
-```bash
-tracert 8.8.8.8
-```
+### IP interno (máquina local)
 
-**Objetivo:** identificar até onde os pacotes chegam na rede.
-
-**Resultado:**
-
-* Pacote chegou ao gateway local (192.168.1.1)
-* Não avançou além disso (erro código 1231)
-
-**Conclusão:** falha localizada após o roteador local.
-
----
-
-### 3. Verificação de Configuração de IP
+Resultado do comando:
 
 ```bash
 ipconfig /all
 ```
 
-**Objetivo:** analisar IP, gateway e DNS.
-
-**Resultado:**
-
-* IP atribuído corretamente (192.168.0.100)
-* Campo de DNS não preenchido corretamente
-
-**Conclusão:** falha na distribuição de configuração de rede, afetando resolução de nomes.
-
+![IP interno](./images/ipconfig.png)
 ---
 
-### 4. Limpeza de Cache DNS e Renovação de IP
+### IP externo (internet)
+
+Resultado do comando:
 
 ```bash
-ipconfig /flushdns
-ipconfig /release
-ipconfig /renew
+curl ifconfig.me
 ```
 
-**Objetivo:** eliminar inconsistências de rede local.
-
-**Resultado:** problema persistiu.
-
-**Conclusão:** falha não estava relacionada a cache ou concessão DHCP.
+![IP externo](./images/ip-externo.png)
 
 ---
 
-### 5. Verificação de Interfaces
+## Validação
 
-```bash
-netsh interface show interface
-```
+As evidências acima demonstram:
 
-**Objetivo:** validar interface ativa.
+* o endereço IP interno da máquina dentro da rede local
+* o endereço IP público visível externamente
 
-**Resultado:** interface `Ethernet` identificada corretamente.
-
----
-
-### 6. Reset de TCP/IP
-
-```bash
-netsh winsock reset
-netsh int ip reset
-```
-
-**Objetivo:** restaurar configurações de rede do sistema.
-
-**Resultado:** sem impacto na falha.
+A diferença entre esses valores confirma que o tráfego está passando por múltiplas camadas de NAT.
 
 ---
 
-### 7. Verificação de Proxy
+## Comparação de IPs
 
-```bash
-netsh winhttp reset proxy
-```
+Com base nas evidências coletadas:
 
-**Objetivo:** descartar interferência de proxy.
+IP interno (gateway):
+<PRIVATE_IP>
 
-**Resultado:** nenhum proxy configurado.
+IP público identificado:
+<PUBLIC_IP>
 
----
-
-### 8. Teste com Firewall
-
-```bash
-netsh advfirewall set allprofiles state off
-```
-
-**Objetivo:** validar possível bloqueio de tráfego.
-
-**Resultado:** não foi a causa raiz, apenas etapa de validação.
+A divergência entre esses valores indica a presença de uma camada adicional de NAT.
 
 ---
 
-### 9. Reativação do Firewall
+## Processo de Raciocínio
 
-```bash
-netsh advfirewall set allprofiles state on
-```
+A análise seguiu a seguinte lógica:
 
----
+1. Identificação do IP local e gateway
+2. Verificação do IP público externo
+3. Comparação entre os valores
+4. Identificação de inconsistência
+5. Levantamento da hipótese de NAT adicional
+6. Validação com base na arquitetura de rede do provedor
 
-## Alterações no Roteador
-
-| Configuração     | Antes              | Depois          |
-| ---------------- | ------------------ | --------------- |
-| Modo operacional | Roteador           | Ponto de Acesso |
-| DNS              | Automático (vazio) | 192.168.0.1     |
+Esse processo permitiu concluir que o problema não estava na configuração local da rede.
 
 ---
 
-## Causa Raiz
+## Análise Técnica
 
-Double NAT
+A presença de double NAT foi confirmada a partir dos seguintes indícios:
 
-Dois roteadores atuando como dispositivos de roteamento na mesma rede, introduzindo múltiplas camadas de NAT.
+* divergência entre IP interno e IP público
+* ausência de controle direto sobre o roteamento externo
+* falha em configurações de port forwarding
 
-Isso resultava em:
-
-* mascaramento duplo de endereços IP
-* falhas no encaminhamento de pacotes
-* inconsistência na distribuição de configurações de rede (como DNS)
+Esse cenário é comumente associado a CGNAT, onde o provedor utiliza NAT em larga escala para compartilhar endereços IPv4 entre múltiplos usuários.
 
 ---
 
-## Solução
+## Impacto
 
-Alteração do TP-Link para modo Ponto de Acesso (Access Point), eliminando a segunda camada de NAT e permitindo que apenas o roteador principal gerencie o roteamento da rede.
+A configuração de double NAT afeta diretamente:
 
----
+* serviços que requerem conexões de entrada
+* aplicações P2P
+* servidores locais
+* acesso remoto à rede
 
-## Conclusão
-
-Este caso reforça a importância de mapear corretamente a topologia de rede antes de aplicar soluções isoladas, evitando diagnósticos incorretos e retrabalho.
-
----
-
-## Habilidades Demonstradas
-
-* Diagnóstico de rede (TCP/IP)
-* Troubleshooting estruturado
-* Análise de conectividade (ping, tracert)
-* Interpretação de falhas de DNS
-* Identificação e resolução de Double NAT
-* Configuração de dispositivos de rede
-* Análise de falhas em ambiente real
+Além disso, dificulta a implementação de regras de encaminhamento de portas (port forwarding), tornando a rede limitada para determinados usos.
 
 ---
 
-## Arquivos
+## Implicações de Segurança
 
-* README.md
-* diagnostico_rede.pdf
+### Aspectos positivos
+
+* reduz exposição direta da rede interna
+* adiciona uma camada adicional de barreira contra acessos externos
+
+### Aspectos negativos
+
+* dificulta auditoria e monitoramento da rede
+* mascara problemas reais de conectividade
+* pode induzir a configurações incorretas de segurança
 
 ---
 
-## Contato
+## Tentativas de Solução
 
-* GitHub: https://github.com/JGuilh3rm3
-* LinkedIn: https://www.linkedin.com/in/jo%C3%A3o-guilherme-andrade-227b14346/?skipRedirect=true
+Foram realizadas tentativas de:
+
+* configuração de port forwarding
+* ajuste de parâmetros do roteador
+
+Sem sucesso, o que reforça a hipótese de limitação externa (CGNAT).
 
 ---
 
-João Guilherme | ADS - UNIP São Paulo
+## Possíveis Soluções
 
+As alternativas para mitigar o problema incluem:
+
+* solicitação de IP público ao provedor
+* utilização de modo bridge no modem (quando disponível)
+* uso de VPN com suporte a encaminhamento de portas
+* implementação de serviços intermediários (reverse proxy, túnel seguro)
+
+A escolha da solução depende das restrições impostas pelo provedor e do nível de controle disponível sobre a rede.
+
+---
+
+## Resultado do Diagnóstico
+
+O problema foi corretamente identificado como uma limitação externa relacionada à arquitetura do provedor (CGNAT).
+
+Dessa forma, não é possível resolver completamente o cenário apenas com alterações locais na rede.
+
+A resolução definitiva depende de ações como:
+
+* obtenção de IP público junto ao provedor
+* alteração do modo de operação do equipamento (bridge)
+* uso de soluções intermediárias (VPN ou túnel)
+
+Este diagnóstico evita tentativas incorretas de solução e direciona a abordagem para medidas compatíveis com o cenário real.
+
+---
+
+## Conclusão Técnica
+
+A análise demonstra que o problema não está relacionado à configuração local da rede, mas sim à arquitetura imposta pelo provedor de internet.
+
+Esse cenário é comum em ambientes residenciais modernos devido à escassez de endereços IPv4.
+
+---
+
+## Lições Aprendidas
+
+* a análise de rede deve considerar a infraestrutura externa, não apenas o ambiente local
+* divergências entre IPs são indicativos importantes de problemas estruturais
+* nem todos os problemas de conectividade podem ser resolvidos apenas com configuração local
+* a validação de hipóteses é essencial para um diagnóstico preciso
+
+---
+
+## Observação
+
+Todos os dados de rede, incluindo endereços IP e informações de infraestrutura, foram anonimizados com o objetivo de evitar exposição de informações sensíveis.
