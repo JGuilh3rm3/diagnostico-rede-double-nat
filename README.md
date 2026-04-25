@@ -82,7 +82,7 @@ Resultado do comando:
 ipconfig /all
 ```
 
-![IP interno](./images/ipconfig.png)
+![IP interno](ipconfig.png)
 ---
 
 ### IP externo (internet)
@@ -93,8 +93,7 @@ Resultado do comando:
 curl ifconfig.me
 ```
 
-![IP externo](./images/ip-externo.png)
-
+![IP externo](ip-externo.png)
 ---
 
 ## Validação
